@@ -1,0 +1,12 @@
+spaces
+torch
+fastapi
+uvicorn[standard]
+websockets
+python-multipart
+gradio==5.9.1
+faster-whisper>=1.1.0
+av>=11.0.0,<17.0.0
+numpy>=1.26.0
+huggingface_hub
+protobuf

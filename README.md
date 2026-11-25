@@ -7,7 +7,7 @@ Real-time multilingual Speech-to-Text web application supporting live code-switc
 - **Frontend & CRUD API (`/`)**: Next.js 16 App Router + TypeScript + Tailwind CSS deployed on **Vercel**.
   - **Live Studio**: Captures 16 kHz mono PCM via Web Audio `AudioWorklet`, streams audio frames over WebSocket to `faster-whisper`, shows real-time interim updates + VAD-committed final sentences, and supports audio file upload + optional Hugging Face Inference API mode (`HF_TOKEN`).
   - **History Dashboard**: Full **MongoDB CRUD** (`GET`, `POST`, `PATCH`, `DELETE`) with search, mode filters, pinned sessions, segment breakdowns, inline editing, and `.txt` / `.srt` / `.json` export.
-- **Inference Backend (`backend/`)**: FastAPI + `faster-whisper` + CTranslate2 + Silero VAD packaged as a **Hugging Face Spaces Docker** app (`sdk: docker`, port `7860`).
+- **Inference Backend (`backend/`)**: FastAPI + `faster-whisper` + CTranslate2 + Silero VAD packaged both as a Docker service ([backend/Dockerfile](backend/Dockerfile)) and as a Hugging Face Gradio + ZeroGPU Space ([backend/hf_space/app.py](backend/hf_space/app.py), port `7860`).
 
 ## Environment Variables (Vercel / `.env.local`)
 
