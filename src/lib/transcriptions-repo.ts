@@ -1,5 +1,5 @@
 import { ObjectId, type Filter, type WithId, type Document } from 'mongodb';
-import { getMongoDb } from './mongodb';
+import { getCollectionName, getMongoDb } from './mongodb';
 import type {
   CreateTranscriptionInput,
   LanguageMode,
@@ -10,12 +10,14 @@ import type {
   UpdateTranscriptionInput,
 } from '@/types/transcription';
 
-const COLLECTION = 'transcriptions';
+const SST_RECORD_TYPE = 'sst_transcription';
+const SST_SCOPE_FILTER = { recordType: SST_RECORD_TYPE } as const;
 const VALID_MODES = new Set<LanguageMode>(['multilingual', 'hinglish', 'hi', 'en']);
 const VALID_ENGINES = new Set<SttEngine>(['faster-whisper', 'hf-inference']);
 
 interface TranscriptionDocument extends Document {
   _id: ObjectId;
+  recordType: string;
   title: string;
   transcript: string;
   segments: TranscriptSegment[];
@@ -129,9 +131,9 @@ export async function listTranscriptions(params: {
   limit?: number;
 }): Promise<{ items: TranscriptionRecord[]; stats: TranscriptionStats }> {
   const db = await getMongoDb();
-  const col = db.collection<TranscriptionDocument>(COLLECTION);
+  const col = db.collection<TranscriptionDocument>(getCollectionName());
 
-  const filter: Filter<TranscriptionDocument> = {};
+  const filter: Filter<TranscriptionDocument> = { ...SST_SCOPE_FILTER };
   if (params.mode && VALID_MODES.has(params.mode as LanguageMode)) {
     filter.languageMode = params.mode as LanguageMode;
   }
@@ -156,6 +158,7 @@ export async function listTranscriptions(params: {
         totalDurationSeconds: number;
         languageLists: string[][];
       }>([
+        { $match: SST_SCOPE_FILTER },
         {
           $group: {
             _id: null,
@@ -195,13 +198,15 @@ export async function listTranscriptions(params: {
 export async function getTranscriptionById(id: string): Promise<TranscriptionRecord | null> {
   if (!ObjectId.isValid(id)) return null;
   const db = await getMongoDb();
-  const doc = await db.collection<TranscriptionDocument>(COLLECTION).findOne({ _id: new ObjectId(id) });
+  const doc = await db
+    .collection<TranscriptionDocument>(getCollectionName())
+    .findOne({ _id: new ObjectId(id), ...SST_SCOPE_FILTER });
   return doc ? serializeDoc(doc) : null;
 }
 
 export async function createTranscription(input: CreateTranscriptionInput): Promise<TranscriptionRecord> {
   const db = await getMongoDb();
-  const col = db.collection<TranscriptionDocument>(COLLECTION);
+  const col = db.collection<TranscriptionDocument>(getCollectionName());
 
   const segments = Array.isArray(input.segments) ? input.segments : [];
   const transcript = (
@@ -218,6 +223,7 @@ export async function createTranscription(input: CreateTranscriptionInput): Prom
 
   const now = new Date();
   const doc: Omit<TranscriptionDocument, '_id'> = {
+    recordType: SST_RECORD_TYPE,
     title: deriveTitle(transcript, input.title),
     transcript,
     segments,
@@ -248,9 +254,9 @@ export async function updateTranscription(
 ): Promise<TranscriptionRecord | null> {
   if (!ObjectId.isValid(id)) return null;
   const db = await getMongoDb();
-  const col = db.collection<TranscriptionDocument>(COLLECTION);
+  const col = db.collection<TranscriptionDocument>(getCollectionName());
 
-  const existing = await col.findOne({ _id: new ObjectId(id) });
+  const existing = await col.findOne({ _id: new ObjectId(id), ...SST_SCOPE_FILTER });
   if (!existing) return null;
 
   const updateFields: Partial<TranscriptionDocument> = {
@@ -296,7 +302,7 @@ export async function updateTranscription(
   }
 
   const updated = await col.findOneAndUpdate(
-    { _id: new ObjectId(id) },
+    { _id: new ObjectId(id), ...SST_SCOPE_FILTER },
     { $set: updateFields },
     { returnDocument: 'after' },
   );
@@ -307,6 +313,8 @@ export async function updateTranscription(
 export async function deleteTranscription(id: string): Promise<boolean> {
   if (!ObjectId.isValid(id)) return false;
   const db = await getMongoDb();
-  const res = await db.collection<TranscriptionDocument>(COLLECTION).deleteOne({ _id: new ObjectId(id) });
+  const res = await db
+    .collection<TranscriptionDocument>(getCollectionName())
+    .deleteOne({ _id: new ObjectId(id), ...SST_SCOPE_FILTER });
   return res.deletedCount === 1;
 }

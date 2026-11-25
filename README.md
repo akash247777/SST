@@ -13,7 +13,8 @@ Real-time multilingual Speech-to-Text web application supporting live code-switc
 
 ```env
 MONGODB_URI=mongodb+srv://<user>:<password>@<cluster>.mongodb.net/?retryWrites=true&w=majority
-MONGODB_DB=sst_transcriptions
+MONGODB_DB=test
+MONGODB_COLLECTION=ClientChats
 NEXT_PUBLIC_WHISPER_SERVER_URL=https://<your-hf-space>.hf.space
 HF_TOKEN=
 ```

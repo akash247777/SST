@@ -20,8 +20,12 @@ function getMongoUri(): string {
   return uri.trim();
 }
 
-function getDatabaseName(): string {
-  return process.env.MONGODB_DB?.trim() || 'sst_transcriptions';
+export function getDatabaseName(): string {
+  return process.env.MONGODB_DB?.trim() || 'test';
+}
+
+export function getCollectionName(): string {
+  return process.env.MONGODB_COLLECTION?.trim() || 'ClientChats';
 }
 
 export async function getMongoClient(): Promise<MongoClient> {
@@ -45,13 +49,14 @@ export async function getMongoClient(): Promise<MongoClient> {
 export async function getMongoDb(): Promise<Db> {
   const client = await getMongoClient();
   const db = client.db(getDatabaseName());
+  const collectionName = getCollectionName();
 
   if (!globalThis.__mongoIndexesReady) {
     globalThis.__mongoIndexesReady = db
-      .collection('transcriptions')
+      .collection(collectionName)
       .createIndexes([
-        { key: { isPinned: -1, createdAt: -1 } },
-        { key: { languageMode: 1 } },
+        { key: { recordType: 1, isPinned: -1, createdAt: -1 } },
+        { key: { recordType: 1, languageMode: 1 } },
       ])
       .then(() => undefined)
       .catch((err) => {

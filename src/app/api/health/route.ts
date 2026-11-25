@@ -1,5 +1,10 @@
 import { connection } from 'next/server';
-import { DatabaseNotConfiguredError, getMongoDb } from '@/lib/mongodb';
+import {
+  DatabaseNotConfiguredError,
+  getCollectionName,
+  getDatabaseName,
+  getMongoDb,
+} from '@/lib/mongodb';
 
 export async function GET() {
   await connection();
@@ -31,6 +36,8 @@ export async function GET() {
     ok: dbStatus === 'connected',
     dbStatus,
     dbError,
+    dbName: getDatabaseName(),
+    collectionName: getCollectionName(),
     whisperServerUrl,
     hfConfigured: Boolean(process.env.HF_TOKEN?.trim()),
     hfModel: process.env.HF_WHISPER_MODEL?.trim() || 'openai/whisper-large-v3-turbo',
